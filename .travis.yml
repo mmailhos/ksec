@@ -1,0 +1,11 @@
+---
+# Make sure we don't build the VM
+sudo: false
+
+notifications:
+  email: false
+
+language: go
+
+go:
+  - "1.10.x"
