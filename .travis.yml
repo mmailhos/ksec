@@ -9,3 +9,6 @@ language: go
 
 go:
   - "1.10.x"
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
