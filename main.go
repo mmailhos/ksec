@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -32,14 +33,15 @@ func kubeAPI(kubeconfig clientcmd.ClientConfig) corev1.CoreV1Interface {
 }
 
 // printResult do the final logic taken an array of secrets
-func printResult(foundSecrets []*v1.Secret, flagColor bool) {
-	if len(foundSecrets) == 0 {
+func printResult(foundSecrets []*v1.Secret, flagColor, flagMetadata bool, targetData string) {
+	switch len(foundSecrets) {
+	case 0:
 		fmt.Println("No secret found")
-	} else if len(foundSecrets) == 1 {
+	case 1:
 		for _, secret := range foundSecrets {
-			printSecret(secret, flagColor)
+			printSecret(secret, flagColor, flagMetadata, targetData)
 		}
-	} else {
+	default:
 		fmt.Println("Unable to determine the target. Try one of these:")
 		for _, secret := range foundSecrets {
 			fmt.Println(secret.Name)
@@ -47,16 +49,37 @@ func printResult(foundSecrets []*v1.Secret, flagColor bool) {
 	}
 }
 
+// secretData. Handy struct to convert secret data into a Slice to sort later
+type secretDataType struct {
+	Key   string
+	Value string
+}
+
+// sortedData will take secretData input and return a sorted array of keys
+func sortedData(secretData map[string][]byte, targetData string) (secData []secretDataType) {
+	for k, v := range secretData {
+		if targetData == "" || strings.Contains(strings.ToLower(k), strings.ToLower(targetData)) {
+			secData = append(secData, secretDataType{Key: k, Value: string(v)})
+		}
+	}
+	sort.Slice(secData, func(i, j int) bool {
+		return secData[i].Key < secData[j].Key
+	})
+	return
+}
+
 // printSecret simply prints on STDOUT the data of a given secret
-func printSecret(secret *v1.Secret, flagColor bool) {
-	fmt.Printf("%s (%s)\n", secret.Name, secret.Type)
-	for k, v := range secret.Data {
-		if !flagColor {
-			color.New(color.FgBlue).Printf(k)
+func printSecret(secret *v1.Secret, flagColor, flagMetadata bool, targetData string) {
+	if flagMetadata {
+		fmt.Printf("Name: %s, Type: %s, Count: %v, Size: %v\n", secret.Name, secret.Type, len(secret.Data), secret.Size())
+	}
+	for _, sd := range sortedData(secret.Data, targetData) {
+		if flagColor {
+			color.New(color.FgBlue).Printf(sd.Key)
 			fmt.Printf(": ")
-			color.New(color.FgGreen).Println(string(v))
+			color.New(color.FgGreen).Println(sd.Value)
 		} else {
-			fmt.Printf("%s: %s\n", k, string(v))
+			fmt.Printf("%s: %s\n", sd.Key, sd.Value)
 		}
 	}
 }
@@ -101,14 +124,15 @@ func getSecrets(targetSecret, targetType string, secrets *v1.SecretList) (foundS
 }
 
 func main() {
-	var flagNamespace, flagLabel, flagField, flagType, namespace string
-	var flagColor bool
+	var flagNamespace, flagLabel, flagField, flagType, namespace, targetData string
+	var flagColor, flagMetadata bool
 	var err error
 
 	flag.StringVar(&flagNamespace, "namespace", "", "namespace")
 	flag.StringVar(&flagLabel, "label", "", "Label selector")
 	flag.StringVar(&flagField, "field", "", "Field selector")
-	flag.BoolVar(&flagColor, "no-color", false, "Do not use colors")
+	flag.BoolVar(&flagColor, "color", false, "Use colors")
+	flag.BoolVar(&flagMetadata, "metadata", false, "Print metadata of the found secret (Name, Type)")
 	flag.StringVar(&flagType, "type", "", "Look for a specific secret type (ex: Opaque)")
 	flag.Parse()
 
@@ -116,6 +140,10 @@ func main() {
 		panic(errors.New("missing argument secret"))
 	}
 	targetSecret := flag.Args()[0]
+
+	if len(flag.Args()) > 1 {
+		targetData = flag.Args()[1]
+	}
 
 	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
@@ -133,7 +161,7 @@ func main() {
 	// Attempt to directly get the secret (e.g. perfect match) to avoid unnecessary operations
 	foundSecret, err := api.Secrets(namespace).Get(targetSecret, metav1.GetOptions{})
 	if err == nil && (flagType == "" || flagType == string(foundSecret.Type)) {
-		printSecret(foundSecret, flagColor)
+		printSecret(foundSecret, flagColor, flagMetadata, targetData)
 		os.Exit(0)
 	}
 
@@ -143,5 +171,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	printResult(getSecrets(targetSecret, flagType, secrets), flagColor)
+	printResult(getSecrets(targetSecret, flagType, secrets), flagColor, flagMetadata, targetData)
 }
