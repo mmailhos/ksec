@@ -1,6 +1,5 @@
 # Ksec
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT) [![Go Report Card](https://goreportcard.com/badge/github.com/MathieuMailhos/ksec)](https://goreportcard.com/report/github.com/MathieuMailhos/ksec) [![Build Status](https://travis-ci.org/MathieuMailhos/ksec.png?branch=master)](https://travis-ci.org/MathieuMailhos/ksec)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT) [![Go Report Card](https://goreportcard.com/badge/github.com/MathieuMailhos/ksec)](https://goreportcard.com/report/github.com/MathieuMailhos/ksec) [![Build Status](https://travis-ci.org/MathieuMailhos/ksec.svg?branch=master)](https://travis-ci.org/MathieuMailhos/ksec)
 
 
 ksec is an easy-to-use tool to decode your Kubernetes secrets. It supports Helm versioning.
