@@ -2,25 +2,28 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT) [![Go Report Card](https://goreportcard.com/badge/github.com/MathieuMailhos/ksec)](https://goreportcard.com/report/github.com/MathieuMailhos/ksec) [![Build Status](https://travis-ci.org/MathieuMailhos/ksec.svg?branch=master)](https://travis-ci.org/MathieuMailhos/ksec)
 
 
-ksec is an easy-to-use tool to decode your Kubernetes secrets. It supports Helm versioning.
-No more crazy combination of grep/yq/base64.
+ksec is an easy-to-use tool to find, sort and decode your Kubernetes secrets. It supports Helm versioning.
+No crazy combination of grep/yq/base64 anymore.
 
-## Install
+## Installation
 
+Set up your `$GOPATH`, then run:
 ```
 go get github.com/MathieuMailhos/ksec
 ```
 
-## Use
+## Usage
 
 ```
 ksec [OPTIONS] <secret> [KEY]
 ```
 
-Example:
+This example retrieves the latest deployed secret that contains `mysql` and find all data keys with `pass`:
 
 ```
-ksec --color --namespace prod apache password
+$ ksec mysql pass
+USER_DB_MYSQL_PASSWORD: pa$$w0rd123
+DATA_DB_MYSQL_PASSWORD: r4nd0mP4ss
 ```
 
 ## Options
