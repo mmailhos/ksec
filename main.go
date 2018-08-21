@@ -62,6 +62,9 @@ func sortedData(secretData map[string][]byte, targetData string) (secData []secr
 			secData = append(secData, secretDataType{Key: k, Value: string(v)})
 		}
 	}
+	if len(secData) == 0 {
+		fmt.Printf("No data key found with %s\n", targetData)
+	}
 	sort.Slice(secData, func(i, j int) bool {
 		return secData[i].Key < secData[j].Key
 	})
