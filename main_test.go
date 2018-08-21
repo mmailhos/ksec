@@ -40,14 +40,9 @@ func TestGetSecretsSubStr(t *testing.T) {
 
 // TestGetSecretsList makes sure that getSecrets returns a list of secrets proposal
 func TestGetSecretsProposals(t *testing.T) {
-	secrets := []string{"qa-env-cert", "dev-env-cert", "prod-env-cert"}
+	secrets := []string{"qa-env-cert", "dev-env-cert", "mongo-dump", "prod-env-cert", "mongo-admin"}
 	results := getSecrets("env-cert", "", makeSecrets(secrets))
 	if len(results) != 3 {
 		t.Errorf("Bad results length")
-	}
-	for index, secret := range results {
-		if secret.Name != secrets[index] {
-			t.Errorf("Incorrect value")
-		}
 	}
 }
