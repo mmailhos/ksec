@@ -9,7 +9,7 @@ No crazy combination of grep/yq/base64 anymore.
 
 Set up your `$GOPATH`, then run:
 ```
-go get github.com/MathieuMailhos/ksec
+go get github.com/mathieumailhos/ksec
 ```
 
 ## Usage
@@ -22,8 +22,8 @@ This example retrieves the latest deployed secret that contains `mysql` and find
 
 ```
 $ ksec mysql pass
-USER_DB_MYSQL_PASSWORD: pa$$w0rd123
 DATA_DB_MYSQL_PASSWORD: r4nd0mP4ss
+USER_DB_MYSQL_PASSWORD: pa$$w0rd123
 ```
 
 ## Options
