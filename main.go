@@ -21,12 +21,12 @@ import (
 func kubeAPI(kubeconfig clientcmd.ClientConfig) corev1.CoreV1Interface {
 	restconfig, err := kubeconfig.ClientConfig()
 	if err != nil {
-		panic(err)
+		prExit(err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(restconfig)
 	if err != nil {
-		panic(err)
+		prExit(err)
 	}
 
 	return clientset.CoreV1()
@@ -53,6 +53,12 @@ func printResult(foundSecrets []*v1.Secret, flagColor, flagMetadata bool, target
 type secretDataType struct {
 	Key   string
 	Value string
+}
+
+// prExit prints the message and exit 1
+func prExit(err error) {
+	os.Stderr.WriteString(err.Error())
+	os.Exit(1)
 }
 
 // sortedData will take secretData input and return a sorted array of keys
@@ -140,7 +146,7 @@ func main() {
 	flag.Parse()
 
 	if len(flag.Args()) == 0 {
-		panic(errors.New("missing argument secret"))
+		prExit(errors.New("Missing main argument"))
 	}
 	targetSecret := flag.Args()[0]
 
@@ -155,7 +161,7 @@ func main() {
 	if flagNamespace == "" {
 		namespace, _, err = kubeconfig.Namespace()
 		if err != nil {
-			panic(err)
+			prExit(errors.New("Invalid namespace"))
 		}
 	}
 
@@ -172,7 +178,7 @@ func main() {
 	listOptions := metav1.ListOptions{LabelSelector: flagLabel, FieldSelector: flagField}
 	secrets, err := api.Secrets(namespace).List(listOptions)
 	if err != nil {
-		panic(err)
+		prExit(err)
 	}
 	printResult(getSecrets(targetSecret, flagType, secrets), flagColor, flagMetadata, targetData)
 }

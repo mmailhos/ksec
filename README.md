@@ -47,7 +47,7 @@ Taken an input, here is the ordered list of rules:
 ## Roadmap
 
 Potential incoming features:
-  * Improve argopt and error handling (ex: print Usage, no panic...)
+  * Improve argopt (ex: print Usage...)
   * Add an option to also print the configmap related to the found secret
   * Get all secrets found in a deployment
   * Multiple outputs: yaml, json, bash env...
