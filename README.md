@@ -49,8 +49,6 @@ Taken an input, here is the ordered list of rules:
 
 Potential incoming features:
   * Fix --metadata for all outputs
-  * Fix --color for all outputs
-  * Multiple outputs: yaml, json, bash env...
   * Improve argopt (ex: print Usage...)
   * Add an option to also print the configmap related to the found secret
   * Get all secrets found in a deployment
