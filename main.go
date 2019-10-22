@@ -62,38 +62,88 @@ func sortFilter(secretData map[string][]byte, targetData string) (secData []secr
 	return
 }
 
-// printSecretSeparator simply prints on STDOUT the data of a given secret with KeySeparatorValue format.
-func printSecretSeparator(secret *v1.Secret, flagColor, flagMetadata bool, targetData, sep string) {
-	if flagMetadata {
-		fmt.Printf("# Name: %s, Type: %s, Count: %v, Size: %v\n", secret.Name, secret.Type, len(secret.Data), secret.Size())
-	}
+// printSecretYAML simply prints on STDOUT the data of a given secret in YAML format
+func printSecretYAML(secret *v1.Secret, flagColor, flagMetadata bool, targetData string) {
 	keyColorF := color.New(color.FgBlue).SprintFunc()
 	valueColorF := color.New(color.FgGreen).SprintFunc()
 
+	printTitle := func(title string) {
+		if flagColor {
+			fmt.Println(keyColorF(title + ":"))
+		} else {
+			fmt.Println(title + ":")
+		}
+	}
+
+	if flagMetadata {
+		metadata := map[string]string{"Name": secret.Name, "Type": string(secret.Type), "Count": strconv.Itoa(len(secret.Data)), "Size": strconv.Itoa(secret.Size())}
+		printTitle("metadata")
+		for key := range metadata {
+			if flagColor {
+				fmt.Printf("  %s: %s\n", keyColorF(key), valueColorF(metadata[key]))
+			} else {
+				fmt.Printf("  %s: %s\n", key, metadata[key])
+			}
+		}
+	}
+	printTitle("values")
 	for _, sd := range sortFilter(secret.Data, targetData) {
 		if flagColor {
-			fmt.Printf("%s%s%s\n", keyColorF(sd.Key), sep, valueColorF(sd.Value))
+			fmt.Printf("  %s: %s\n", keyColorF(sd.Key), valueColorF(sd.Value))
 		} else {
-			fmt.Printf("%s%s%s\n", sd.Key, sep, sd.Value)
+			fmt.Printf("  %s: %s\n", sd.Key, sd.Value)
+		}
+	}
+}
+
+// printSecretEnv simply prints on STDOUT the data of a given secret in bash-like Env format
+func printSecretEnv(secret *v1.Secret, flagColor, flagMetadata bool, targetData string) {
+	keyColorF := color.New(color.FgBlue).SprintFunc()
+	valueColorF := color.New(color.FgGreen).SprintFunc()
+
+	if flagMetadata {
+		metadata := map[string]string{"Name": secret.Name, "Type": string(secret.Type), "Count": strconv.Itoa(len(secret.Data)), "Size": strconv.Itoa(secret.Size())}
+		for key := range metadata {
+			envKey := "METADATA_" + strings.ToUpper(key)
+			if flagColor {
+				fmt.Printf("%s=%s\n", keyColorF(envKey), valueColorF(metadata[key]))
+			} else {
+				fmt.Printf("%s=%s\n", envKey, metadata[key])
+			}
+		}
+	}
+	for _, sd := range sortFilter(secret.Data, targetData) {
+		if flagColor {
+			fmt.Printf("%s=%s\n", keyColorF(sd.Key), valueColorF(sd.Value))
+		} else {
+			fmt.Printf("%s=%s\n", sd.Key, sd.Value)
 		}
 	}
 }
 
 // printSecretJSON do the final logic taken an array of secrets
-func printSecretJSON(secret *v1.Secret, flagColor bool, targetData string) {
-	secs := make(map[string]string)
-	keyColorF := color.New(color.FgBlue).SprintFunc()
-	valueColorF := color.New(color.FgGreen).SprintFunc()
-
-	for _, sd := range sortFilter(secret.Data, targetData) {
-		if flagColor {
-			secs[keyColorF(sd.Key)] = valueColorF(sd.Value)
-		} else {
-			secs[sd.Key] = sd.Value
-		}
+func printSecretJSON(secret *v1.Secret, flagMetadata bool, targetData string) {
+	type metadata struct {
+		Name   string
+		Type   string
+		Length int
+		Size   int
+	}
+	type outjson struct {
+		Metadata metadata          `json:"metadata",omitempty`
+		Values   map[string]string `json:"values"`
 	}
 
-	secretJSON, err := json.MarshalIndent(secs, "", "\t")
+	secs := outjson{Values: make(map[string]string)}
+	for _, sd := range sortFilter(secret.Data, targetData) {
+		secs.Values[sd.Key] = sd.Value
+	}
+
+	if flagMetadata {
+		secs.Metadata = metadata{Name: secret.Name, Type: string(secret.Type), Length: len(secret.Data), Size: secret.Size()}
+	}
+
+	secretJSON, err := json.MarshalIndent(secs, "", "  ")
 	if err != nil {
 		prExit(err)
 	}
@@ -176,11 +226,11 @@ func main() {
 	api := kubeAPI(kubeconfig)
 	outSec := func(sec *v1.Secret) {
 		if flagOut == "yaml" || flagOut == "yml" {
-			printSecretSeparator(sec, flagColor, flagMetadata, targetData, ": ")
+			printSecretYAML(sec, flagColor, flagMetadata, targetData)
 		} else if flagOut == "env" {
-			printSecretSeparator(sec, flagColor, flagMetadata, targetData, "=")
+			printSecretEnv(sec, flagColor, flagMetadata, targetData)
 		} else if flagOut == "json" {
-			printSecretJSON(sec, flagColor, targetData)
+			printSecretJSON(sec, flagMetadata, targetData)
 		} else {
 			fmt.Fprintf(os.Stderr, "Unknown output format")
 		}

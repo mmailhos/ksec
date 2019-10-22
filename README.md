@@ -47,8 +47,10 @@ Taken an input, here is the ordered list of rules:
 
 ## Roadmap
 
+Known issues:
+  * Fix --color for json output
+
 Potential incoming features:
-  * Fix --metadata for all outputs
   * Improve argopt (ex: print Usage...)
   * Add an option to also print the configmap related to the found secret
   * Get all secrets found in a deployment
