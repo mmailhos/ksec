@@ -46,8 +46,8 @@ func prExit(err error) {
 	os.Exit(1)
 }
 
-// sortFiler will take secretData input and return a sorted array of keys
-func sortFiler(secretData map[string][]byte, targetData string) (secData []secretDataType) {
+// sortFilter will take secretData input and return a sorted array of keys
+func sortFilter(secretData map[string][]byte, targetData string) (secData []secretDataType) {
 	for k, v := range secretData {
 		if targetData == "" || strings.Contains(strings.ToLower(k), strings.ToLower(targetData)) {
 			secData = append(secData, secretDataType{Key: k, Value: string(v)})
@@ -67,11 +67,12 @@ func printSecretSeparator(secret *v1.Secret, flagColor, flagMetadata bool, targe
 	if flagMetadata {
 		fmt.Printf("# Name: %s, Type: %s, Count: %v, Size: %v\n", secret.Name, secret.Type, len(secret.Data), secret.Size())
 	}
-	for _, sd := range sortFiler(secret.Data, targetData) {
+	keyColorF := color.New(color.FgBlue).SprintFunc()
+	valueColorF := color.New(color.FgGreen).SprintFunc()
+
+	for _, sd := range sortFilter(secret.Data, targetData) {
 		if flagColor {
-			color.New(color.FgBlue).Printf(sd.Key)
-			fmt.Printf(sep)
-			color.New(color.FgGreen).Println(sd.Value)
+			fmt.Printf("%s%s%s\n", keyColorF(sd.Key), sep, valueColorF(sd.Value))
 		} else {
 			fmt.Printf("%s%s%s\n", sd.Key, sep, sd.Value)
 		}
@@ -79,12 +80,20 @@ func printSecretSeparator(secret *v1.Secret, flagColor, flagMetadata bool, targe
 }
 
 // printSecretJSON do the final logic taken an array of secrets
-func printSecretJSON(secret *v1.Secret, targetData string) {
+func printSecretJSON(secret *v1.Secret, flagColor bool, targetData string) {
 	secs := make(map[string]string)
-	for _, sd := range sortFiler(secret.Data, targetData) {
-		secs[sd.Key] = sd.Value
+	keyColorF := color.New(color.FgBlue).SprintFunc()
+	valueColorF := color.New(color.FgGreen).SprintFunc()
+
+	for _, sd := range sortFilter(secret.Data, targetData) {
+		if flagColor {
+			secs[keyColorF(sd.Key)] = valueColorF(sd.Value)
+		} else {
+			secs[sd.Key] = sd.Value
+		}
 	}
-	secretJSON, err := json.Marshal(secs)
+
+	secretJSON, err := json.MarshalIndent(secs, "", "\t")
 	if err != nil {
 		prExit(err)
 	}
@@ -165,14 +174,13 @@ func main() {
 	}
 
 	api := kubeAPI(kubeconfig)
-
 	outSec := func(sec *v1.Secret) {
 		if flagOut == "yaml" || flagOut == "yml" {
 			printSecretSeparator(sec, flagColor, flagMetadata, targetData, ": ")
 		} else if flagOut == "env" {
 			printSecretSeparator(sec, flagColor, flagMetadata, targetData, "=")
 		} else if flagOut == "json" {
-			printSecretJSON(sec, targetData)
+			printSecretJSON(sec, flagColor, targetData)
 		} else {
 			fmt.Fprintf(os.Stderr, "Unknown output format")
 		}
