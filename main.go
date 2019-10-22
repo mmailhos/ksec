@@ -86,12 +86,19 @@ func printSecretYAML(secret *v1.Secret, flagColor, flagMetadata bool, targetData
 			}
 		}
 	}
-	printTitle("values")
+
+	// We assume we do not need to have a subfield values if --metadata is not specified
+	indent := ""
+	if flagMetadata {
+		printTitle("values")
+		indent = "  "
+	}
+
 	for _, sd := range sortFilter(secret.Data, targetData) {
 		if flagColor {
-			fmt.Printf("  %s: %s\n", keyColorF(sd.Key), valueColorF(sd.Value))
+			fmt.Printf("%s%s: %s\n", indent, keyColorF(sd.Key), valueColorF(sd.Value))
 		} else {
-			fmt.Printf("  %s: %s\n", sd.Key, sd.Value)
+			fmt.Printf("%s%s: %s\n", indent, sd.Key, sd.Value)
 		}
 	}
 }
