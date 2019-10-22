@@ -9,7 +9,7 @@ No crazy combination of grep/yq/base64 anymore.
 
 Set up your `$GOPATH`, then run:
 ```
-go get github.com/mathieumailhos/ksec
+go get github.com/mmailhos/ksec
 ```
 
 ## Usage
@@ -48,10 +48,11 @@ Taken an input, here is the ordered list of rules:
 ## Roadmap
 
 Known issues:
-  * Fix --color for json output
+  * Fix --color for json output. Or pipe to jq for now :)
 
 Potential incoming features:
   * Improve argopt (ex: print Usage...)
   * Add an option to also print the configmap related to the found secret
   * Get all secrets found in a deployment
-  * Any other idea? Please open an issue
+
+Anything else? Please open an issue
