@@ -34,6 +34,7 @@ USER_DB_MYSQL_PASSWORD: pa$$w0rd123
 --selector <kubernetes selector>
 --type <secret type (ex: Opaque)>
 --color
+--out [env,yaml,json]
 --metadata
 ```
 
@@ -47,8 +48,10 @@ Taken an input, here is the ordered list of rules:
 ## Roadmap
 
 Potential incoming features:
+  * Fix --metadata for all outputs
+  * Fix --color for all outputs
+  * Multiple outputs: yaml, json, bash env...
   * Improve argopt (ex: print Usage...)
   * Add an option to also print the configmap related to the found secret
   * Get all secrets found in a deployment
-  * Multiple outputs: yaml, json, bash env...
   * Any other idea? Please open an issue
