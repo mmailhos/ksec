@@ -46,6 +46,9 @@ func prExit(err error) {
 	os.Exit(1)
 }
 
+// filterFunc takes a *v1.Secret.Data map and a target string and filters the map to return a slice of KeyValue struct
+type filterFunc func(map[string][]byte, string) []secretDataType
+
 // sortFilter will take secretData input and return a sorted array of keys
 func sortFilter(secretData map[string][]byte, targetData string) (secData []secretDataType) {
 	for k, v := range secretData {
@@ -63,7 +66,7 @@ func sortFilter(secretData map[string][]byte, targetData string) (secData []secr
 }
 
 // printSecretYAML simply prints on STDOUT the data of a given secret in YAML format
-func printSecretYAML(secret *v1.Secret, flagColor, flagMetadata bool, targetData string) {
+func printSecretYAML(secret *v1.Secret, targetData string, filterF filterFunc, flagColor, flagMetadata bool) {
 	keyColorF := color.New(color.FgBlue).SprintFunc()
 	valueColorF := color.New(color.FgGreen).SprintFunc()
 
@@ -94,7 +97,7 @@ func printSecretYAML(secret *v1.Secret, flagColor, flagMetadata bool, targetData
 		indent = "  "
 	}
 
-	for _, sd := range sortFilter(secret.Data, targetData) {
+	for _, sd := range filterF(secret.Data, targetData) {
 		if flagColor {
 			fmt.Printf("%s%s: %s\n", indent, keyColorF(sd.Key), valueColorF(sd.Value))
 		} else {
@@ -104,7 +107,7 @@ func printSecretYAML(secret *v1.Secret, flagColor, flagMetadata bool, targetData
 }
 
 // printSecretEnv simply prints on STDOUT the data of a given secret in bash-like Env format
-func printSecretEnv(secret *v1.Secret, flagColor, flagMetadata bool, targetData string) {
+func printSecretEnv(secret *v1.Secret, targetData string, filterF filterFunc, flagColor, flagMetadata bool) {
 	keyColorF := color.New(color.FgBlue).SprintFunc()
 	valueColorF := color.New(color.FgGreen).SprintFunc()
 
@@ -119,7 +122,7 @@ func printSecretEnv(secret *v1.Secret, flagColor, flagMetadata bool, targetData 
 			}
 		}
 	}
-	for _, sd := range sortFilter(secret.Data, targetData) {
+	for _, sd := range filterF(secret.Data, targetData) {
 		if flagColor {
 			fmt.Printf("%s=%s\n", keyColorF(sd.Key), valueColorF(sd.Value))
 		} else {
@@ -129,7 +132,8 @@ func printSecretEnv(secret *v1.Secret, flagColor, flagMetadata bool, targetData 
 }
 
 // printSecretJSON do the final logic taken an array of secrets
-func printSecretJSON(secret *v1.Secret, flagMetadata bool, targetData string) {
+// no support for color at this time
+func printSecretJSON(secret *v1.Secret, targetData string, filterF filterFunc, flagMetadata bool) {
 	type metadata struct {
 		Name   string
 		Type   string
@@ -142,7 +146,7 @@ func printSecretJSON(secret *v1.Secret, flagMetadata bool, targetData string) {
 	}
 
 	secs := outjson{Values: make(map[string]string)}
-	for _, sd := range sortFilter(secret.Data, targetData) {
+	for _, sd := range filterF(secret.Data, targetData) {
 		secs.Values[sd.Key] = sd.Value
 	}
 
@@ -233,11 +237,11 @@ func main() {
 	api := kubeAPI(kubeconfig)
 	outSec := func(sec *v1.Secret) {
 		if flagOut == "yaml" || flagOut == "yml" {
-			printSecretYAML(sec, flagColor, flagMetadata, targetData)
+			printSecretYAML(sec, targetData, sortFilter, flagColor, flagMetadata)
 		} else if flagOut == "env" {
-			printSecretEnv(sec, flagColor, flagMetadata, targetData)
+			printSecretEnv(sec, targetData, sortFilter, flagColor, flagMetadata)
 		} else if flagOut == "json" {
-			printSecretJSON(sec, flagMetadata, targetData)
+			printSecretJSON(sec, targetData, sortFilter, flagMetadata)
 		} else {
 			fmt.Fprintf(os.Stderr, "Unknown output format")
 		}
